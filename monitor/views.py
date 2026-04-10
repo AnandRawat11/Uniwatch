@@ -1,15 +1,18 @@
 """
 Views for the Uniwatch monitoring platform.
-Handles server management, setup orchestration, and metrics display.
+Handles server management, setup orchestration, alerts, and fix execution.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
-from .models import Server
+from django.utils import timezone
+from django.http import JsonResponse
+from .models import Server, AlertRule, Alert
 from .forms import AddServerForm
-from .utils import setup_server
-from .prometheus_client import query_prometheus, get_server_metrics
+from .utils import setup_server, execute_remote_fix
+from .prometheus_client import query_prometheus, get_server_metrics, check_prometheus_health
+from .fix_actions import get_fix_for_alert, FIX_ACTIONS
 
 
 def landing_page(request):
@@ -89,10 +92,14 @@ def server_detail(request, server_id):
         except Exception:
             metrics = {'error': 'Could not fetch metrics from Prometheus'}
 
+    # Get alerts for this server
+    server_alerts = Alert.objects.filter(server=server).order_by('-created_at')[:10]
+
     return render(request, 'monitor/server_detail.html', {
         'server': server,
         'all_servers': all_servers,
         'metrics': metrics,
+        'server_alerts': server_alerts,
     })
 
 
