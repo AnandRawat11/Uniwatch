@@ -1,0 +1,36 @@
+# Prometheus Configuration for Uniwatch
+# Uses file-based service discovery to auto-detect new servers
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+# Scrape configurations
+scrape_configs:
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter targets (auto-discovered from JSON files)
+  - job_name: 'node_exporter'
+    file_sd_configs:
+      - files:
+          - '/etc/prometheus/targets/uniwatch_targets.json'
+        refresh_interval: 10s
+    relabel_configs:
+      - source_labels: [job]
+        regex: 'node_exporter'
+        action: keep
+
+  # cAdvisor targets (auto-discovered from JSON files)
+  - job_name: 'cadvisor'
+    file_sd_configs:
+      - files:
+          - '/etc/prometheus/targets/uniwatch_targets.json'
+        refresh_interval: 10s
+    relabel_configs:
+      - source_labels: [job]
+        regex: 'cadvisor'
+        action: keep
