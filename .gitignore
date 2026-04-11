@@ -50,6 +50,7 @@ media/
 # ──────────────────────────────────────────────
 prometheus/prometheus_data/
 prometheus/data/
+/data/
 
 # ──────────────────────────────────────────────
 # macOS

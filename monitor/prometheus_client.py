@@ -207,13 +207,17 @@ def get_server_metrics(ip_address):
     return metrics
 
 
-def get_server_timeseries(ip_address, duration_minutes=30):
+def get_server_timeseries(ip_address, duration_minutes=30, duration_seconds=None):
     """
     Fetch ranges of time-series data for the UI graphs.
     """
     instance = f'{ip_address}:9100'
     end_time = int(time.time())
-    start_time = end_time - (duration_minutes * 60)
+    
+    if duration_seconds:
+        start_time = end_time - duration_seconds
+    else:
+        start_time = end_time - (duration_minutes * 60)
 
     # Dense 5-second step to match Prometheus scrape_interval
     step = '5s'

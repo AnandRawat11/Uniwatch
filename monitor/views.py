@@ -12,6 +12,8 @@ from .forms import AddServerForm
 from .utils import setup_server, remove_prometheus_target
 from .prometheus_client import query_prometheus, get_server_metrics, check_prometheus_health
 from .fix_actions import get_fix_actions, FIX_ACTIONS
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 def landing_page(request):
@@ -99,9 +101,15 @@ def server_timeseries_api(request, server_id):
     if not server.is_active:
         return JsonResponse({'error': 'Server is not active'}, status=400)
     
+    # Handle incremental chart updates
+    incremental_seconds = request.GET.get('incremental')
+    duration_seconds = None
+    if incremental_seconds and incremental_seconds.isdigit():
+        duration_seconds = int(incremental_seconds)
+    
     try:
         from .prometheus_client import get_server_timeseries
-        data = get_server_timeseries(server.ip_address, duration_minutes=30)
+        data = get_server_timeseries(server.ip_address, duration_minutes=30, duration_seconds=duration_seconds)
         return JsonResponse(data)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -109,22 +117,62 @@ def server_timeseries_api(request, server_id):
 
 def api_live_alerts(request, server_id):
     """
-    GET: Return live alert list for a server, evaluated against Prometheus right now.
-    Lightweight — polls every 10s from the frontend for real-time alert notifications.
+    GET: Return full server metrics including real-time KPI scalars and live alerts list.
+    Lightweight — polls every 5s from the frontend for real-time status.
     """
     server = get_object_or_404(Server, id=server_id)
     if not server.is_active:
-        return JsonResponse({'alerts': [], 'server': server.name})
+        return JsonResponse({'alerts': [], 'server': server.name, 'metrics': {}})
 
     try:
         metrics = get_server_metrics(server.ip_address)
         alerts = metrics.get('alerts', [])
     except Exception:
+        metrics = {}
         alerts = []
+        
+    # --- DEBOUNCE AND DB TRACKING ---
+    current_alert_names = [a['metric_name'] for a in alerts]
+    
+    # 1. Resolve old alerts no longer active
+    active_db_alerts = Alert.objects.filter(server=server, status='active')
+    for aa in active_db_alerts:
+        if aa.metric_name not in current_alert_names:
+            aa.status = 'resolved'
+            aa.resolved_at = timezone.now()
+            aa.save()
+            
+    # 2. Check for newly debuted alerts & dispatch email
+    for a in alerts:
+        exists = Alert.objects.filter(server=server, metric_name=a['metric_name'], status='active').exists()
+        if not exists:
+            # Create DB Record
+            new_alert = Alert.objects.create(
+                server=server,
+                metric_name=a['metric_name'],
+                severity=a.get('severity', 'warning'),
+                title=a['title'],
+                message=a['message']
+            )
+            # Send Email
+            subject = f"[{new_alert.severity.upper()}] UniWatch Alert: {new_alert.title} on {server.name}"
+            msg_body = f"Server: {server.name} ({server.ip_address})\nAlert: {new_alert.title}\nMessage: {new_alert.message}\nTime: {new_alert.created_at}"
+            try:
+                send_mail(
+                    subject,
+                    msg_body,
+                    settings.EMAIL_HOST_USER,
+                    ['anandrawat20052005@gmail.com'],
+                    fail_silently=False
+                )
+            except Exception as e:
+                print(f"SMTP Auth/Delivery Failed for new Alert: {e}")
+    # ---------------------------------
 
     return JsonResponse({
         'server_id': server.id,
         'server': server.name,
+        'metrics': metrics,
         'alerts': alerts,
     })
 

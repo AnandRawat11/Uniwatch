@@ -121,3 +121,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email Alerts Configuration (SMTP configured for Gmail)
+import os
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# Fallback hardcoded for testing if env vars miss
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER', 'anandrawat20052005@gmail.com')
+# Need to use an App Password from Google Account settings
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS', 'smpcgkslenndydpe')
