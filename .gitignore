@@ -15,14 +15,11 @@ env/
 ENV/
 .env/
 
-# ──────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────
 # Environment Variables & Secrets
-# NOTE: .env.example is a TEMPLATE and IS committed to git.
-#       .env (with real values) is NEVER committed.
-# ──────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────
 .env
 .env.*
-!.env.example
 *.env
 secrets.json
 
