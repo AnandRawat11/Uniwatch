@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uniwatch | Smart Server Monitoring for Developers</title>
+    <link rel="icon" type="image/jpeg" href="{% static 'monitor/images/logo.jpg' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -219,7 +221,7 @@
     <nav id="navbar">
         <div class="container nav-inner">
             <a href="#" class="logo">
-                <span class="logo-icon">⚡</span> Uniwatch
+                <img src="{% static 'monitor/images/logo.jpg' %}" alt="Logo" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;"> Uniwatch
             </a>
             <div class="nav-links">
                 <a href="#features">Features</a>
@@ -482,7 +484,7 @@
     <footer>
         <div class="container">
             <div class="footer-logo">
-                <span class="logo-icon">⚡</span> Uniwatch
+                <img src="{% static 'monitor/images/logo.jpg' %}" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;"> Uniwatch
             </div>
             <div class="footer-links">
                 <a href="#">Documentation</a>
